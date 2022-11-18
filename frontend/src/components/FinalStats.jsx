@@ -54,7 +54,7 @@ function FinalStats () {
             <Card shadow="sm" p="xs">
               <Group>
                 <Text>Average On Fire duration:</Text>
-                <Text>{stats.average_on_fire_duration}</Text>
+                <Text>{Math.round(stats.average_on_fire_duration) + 's'}</Text>
               </Group>
             </Card>
             <Card shadow="sm" p="xs">
