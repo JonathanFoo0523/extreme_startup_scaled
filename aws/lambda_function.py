@@ -165,7 +165,17 @@ def administer_question(sqs_message):
     points_gained = int(calculate_points_gained(player_position, question_points, result))
     new_score = points_gained + int(player["score"])
     # This function should add event to a player's list of events, and update their score in the database, based on the result
-    add_event(game_id, player_id, question_text, question_difficulty, points_gained, result)
+    db_add_event(game_id, player_id, question_text, question_difficulty, points_gained, result)
+
+    if result == "CORRECT":
+        db_inc_correct_tally(game_id, player_id)
+        db_inc_curr_streak(game_id, player_id)
+    else:
+        db_inc_incorrect_tally(game_id, player_id)
+        db_reset_curr_streak(game_id, player_id)
+
+    db_update_streak(game_id, player_id, result)
+    db_inc_round_index(game_id, player_id)
     db_add_running_total(game_id, player_id, new_score, datetime.now(dt.timezone.utc))
     db_set_player_score(game_id, player_id, new_score)
 
