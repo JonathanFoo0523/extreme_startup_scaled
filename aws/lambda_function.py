@@ -154,6 +154,8 @@ def administer_question(sqs_message):
         print(e)
         answer = "NO_SERVER_RESPONSE"
 
+    print(f"User answer is {answer}, but the correct asnwer is {question_answer}")
+
     # Get result of question
     if answer == "ERROR_RESPONSE" or answer == "NO_SERVER_RESPONSE":
         result = answer
