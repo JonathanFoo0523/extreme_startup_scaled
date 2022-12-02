@@ -96,7 +96,11 @@ def administer_question(sqs_message):
     if db_is_game_paused(game_id):
         # Put equivalent message on SQS queue again
         print("Game is paused. Resending message")
-        queue.send_message(sqs_message)
+        queue.send_message(
+            MessageBody=json.dumps(sqs_message['body']),
+            DelaySeconds=20,
+            MessageAttributes=sqs_message['messageAttributes']
+        )
         return
 
     if db_get_game(game_id)['round'] == 1 and player['round_index'] == 0:
