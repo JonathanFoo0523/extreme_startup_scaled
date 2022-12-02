@@ -17,7 +17,8 @@ sqs_resource = boto3.resource('sqs')
 queue = sqs_resource.get_queue_by_name(QueueName='GameTasks')
 
 def print_dict_nicely(dic):
-    print(json.dumps(dic, sort_keys=True, indent=4))
+    # print(json.dumps(dic, sort_keys=True, indent=4))
+    print(dic)
 
 def lambda_handler(event, context):
     print("The event is as follows:")
@@ -162,6 +163,8 @@ def administer_question(sqs_message):
     elif ALLOW_CHEATING and answer == "cheat":  # Allows cheating for demo/test purposes only (Remove)
         result = "CORRECT"
     elif answer.lower() == question_answer.lower():
+        result = "CORRECT"
+    elif question_answer.lower() == "default_name" and answer == player["name"].lower():
         result = "CORRECT"
     else:
         result = "WRONG"
