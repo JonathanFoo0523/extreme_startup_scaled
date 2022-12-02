@@ -34,8 +34,8 @@ class QuestionFactory:
         return random.choice(available_question_types)()
 
     def adjust_window(self, round):
-        window_end = max(1, round * 2)
-        window_start = max(0, window_end - 4)
+        window_end = int(max(1, round * 2))
+        window_start = int(max(0, window_end - 4))
         return (window_start, window_end) 
 
     def total_rounds(self):
