@@ -127,7 +127,7 @@ def administer_question(sqs_message):
 
         res = queue.send_message(
             MessageBody=json.dumps(message),
-            DelaySeconds=next_delay,
+            DelaySeconds=prev_delay,
             MessageAttributes={
                 'MessageType': {
                     'StringValue': 'AdministerQuestion',
