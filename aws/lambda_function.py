@@ -159,7 +159,7 @@ def administer_question(sqs_message):
         result = answer
     elif ALLOW_CHEATING and answer == "cheat":  # Allows cheating for demo/test purposes only (Remove)
         result = "CORRECT"
-    elif answer == question_answer:
+    elif answer.lower() == question_answer.lower():
         result = "CORRECT"
     else:
         result = "WRONG"
