@@ -241,3 +241,9 @@ class AWSGamesManager:
 
     def review_finalboard(self, game_id):
         return db_get_review_finalboard(game_id)
+
+    def review_stats(self, game_id):
+        return db_get_review_stats(game_id)
+
+    def review_analysis(self, game_id):
+        return db_get_review_analysis(game_id)

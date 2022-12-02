@@ -325,6 +325,7 @@ def create_app():
     def total_player_scores(game_id):
         if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
+        print("finalboard", games_manager.review_finalboard(game_id))
         return games_manager.review_finalboard(game_id)
 
     @app.get("/api/<game_id>/review/finalgraph")
@@ -337,14 +338,13 @@ def create_app():
     def review_stats(game_id):
         if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
-        return db_client.xs[f"{game_id}_review"].find_one({"item": "finalstats"})["stats"]
+        return games_manager.review_stats(game_id)
 
     @app.get("/api/<game_id>/review/analysis")
     def review_analysis(game_id):
-        if not f"{game_id}_players" in db_client.xs.list_collection_names():
+        if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
-        out = db_client.xs[f"{game_id}_review"].find_one({"item": "analysis"})
-        return encoder.encode(out["stats"])
+        return games_manager.review_analysis(game_id)
 
     # FORGIVE ME
     bot_responses = {n: [f"Bot{n}", 0] for n in range(100)}

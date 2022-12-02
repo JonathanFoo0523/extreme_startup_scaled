@@ -46,7 +46,7 @@ class GameStats:
         
     def __generate_player_stats(self): 
         for (id, player) in self.players.items():
-            player_events = player.get_events()
+            player_events = player['events']
 
             self.encoded_players.append(JSONEncoder().default(player))
 

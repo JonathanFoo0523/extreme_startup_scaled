@@ -184,6 +184,7 @@ def db_end_game(game_id):
     dynamo_resource.Table(game_id).put_item(
         Item={
             'ComponentId': "Review",
+            'Stats' : {'Dummy': "Dummy"}
         }
     )
     # Store Post Game Analysis in Database
@@ -741,6 +742,15 @@ def db_get_review_finalboard(game_id):
                     })
 
     return res
+
+def db_get_review_stats(game_id):
+    return dynamo_resource.Table(game_id).get_item(Key={'ComponentId': 'Review'})['Item']['Stats']
+
+def db_get_review_analysis(game_id):
+    return dynamo_resource.Table(game_id).get_item(Key={'ComponentId': 'AnalysisEvents'})['Item']['Events']
+
+
+
     
     
 
