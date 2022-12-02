@@ -17,7 +17,8 @@ sqs_resource = boto3.resource('sqs')
 queue = sqs_resource.get_queue_by_name(QueueName='GameTasks')
 
 def print_dict_nicely(dic):
-    print(json.dumps(dic, sort_keys=True, indent=4))
+    # print(json.dumps(dic, sort_keys=True, indent=4))
+    print(dic)
 
 def lambda_handler(event, context):
     print("The event is as follows:")
@@ -111,35 +112,7 @@ def administer_question(sqs_message):
         db_set_player_incorrect_tally(game_id, player_id, 0)
         db_set_request_count(game_id, player_id, 0)
         db_add_running_total(game_id, player_id, 0, dt.datetime.now(dt.timezone.utc))
-
-        game_round = db_get_game_round(game_id)
-        next_question = QuestionFactory().next_question(game_round)
-
-        message = {
-        "game_id": game_id,
-        "player_id": player_id,
-        "question_text": next_question.as_text(),
-        "question_answer": next_question.correct_answer(),
-        "prev_delay": prev_delay,
-        "question_points": next_question.points,
-        "question_difficulty": question_difficulty
-        }
-
-        res = queue.send_message(
-            MessageBody=json.dumps(message),
-            DelaySeconds=prev_delay,
-            MessageAttributes={
-                'MessageType': {
-                    'StringValue': 'AdministerQuestion',
-                    'DataType': 'String'
-                },
-                'ModificationHash': {
-                    'StringValue': modification_hash,
-                    'DataType': 'String'
-                },
-            }
-        )
-        return 
+        player["score"] = 0
 
     # 1. Send request to player, and check response
     try:
@@ -154,12 +127,16 @@ def administer_question(sqs_message):
         print(e)
         answer = "NO_SERVER_RESPONSE"
 
+    print(f"User answer is {answer}, but the correct asnwer is {question_answer}")
+
     # Get result of question
     if answer == "ERROR_RESPONSE" or answer == "NO_SERVER_RESPONSE":
         result = answer
     elif ALLOW_CHEATING and answer == "cheat":  # Allows cheating for demo/test purposes only (Remove)
         result = "CORRECT"
-    elif answer == question_answer:
+    elif answer.lower() == question_answer.lower():
+        result = "CORRECT"
+    elif question_answer.lower() == "default_name" and answer == player["name"].lower():
         result = "CORRECT"
     else:
         result = "WRONG"
@@ -169,7 +146,17 @@ def administer_question(sqs_message):
     points_gained = int(calculate_points_gained(player_position, question_points, result))
     new_score = points_gained + int(player["score"])
     # This function should add event to a player's list of events, and update their score in the database, based on the result
-    add_event(game_id, player_id, question_text, question_difficulty, points_gained, result)
+    db_add_event(game_id, player_id, question_text, question_difficulty, points_gained, result)
+
+    if result == "CORRECT":
+        db_inc_correct_tally(game_id, player_id)
+        db_inc_curr_streak(game_id, player_id)
+    else:
+        db_inc_incorrect_tally(game_id, player_id)
+        db_reset_curr_streak(game_id, player_id)
+
+    db_update_streak(game_id, player_id, result)
+    db_inc_round_index(game_id, player_id)
     db_add_running_total(game_id, player_id, new_score, datetime.now(dt.timezone.utc))
     db_set_player_score(game_id, player_id, new_score)
 
