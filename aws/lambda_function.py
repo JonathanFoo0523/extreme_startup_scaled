@@ -134,9 +134,9 @@ def administer_question(sqs_message):
         result = answer
     elif ALLOW_CHEATING and answer == "cheat":  # Allows cheating for demo/test purposes only (Remove)
         result = "CORRECT"
-    elif answer.lower() == question_answer.lower():
+    elif str(answer).lower() == str(question_answer).lower():
         result = "CORRECT"
-    elif question_answer.lower() == "default_name" and answer == player["name"].lower():
+    elif str(question_answer).lower() == "default_name" and answer == player["name"].lower():
         result = "CORRECT"
     else:
         result = "WRONG"

@@ -180,8 +180,12 @@ def db_set_paused(game_id, value: bool):
 
 def db_end_game(game_id):
     """ Sets ended to true """
-    # TODO
     # Process Post Game Analysis
+    dynamo_resource.Table(game_id).put_item(
+        Item={
+            'ComponentId': "Review",
+        }
+    )
     # Store Post Game Analysis in Database
     dynamo_resource.Table(game_id).update_item(
         Key={
