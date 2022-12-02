@@ -5,6 +5,7 @@ import datetime as dt
 dynamo_client = boto3.client('dynamodb')
 dynamo_resource = boto3.resource('dynamodb')
 
+STREAK_LENGTH = 30
 
 def convert_decimals(event_dic):
     event_dic['difficulty'] = int(event_dic['difficulty'])
@@ -196,7 +197,8 @@ def db_end_game(game_id):
 
 def db_advance_round(game_id):
     """ Increments round """
-    dynamo_resource.Table(game_id).update_item(
+    game_table = dynamo_resource.Table(game_id)
+    game_table.update_item(
         Key={
             'ComponentId': 'State'
         },
@@ -204,6 +206,17 @@ def db_advance_round(game_id):
         ExpressionAttributeValues={
             ':incr': 1
         }
+    )
+
+    pids = db_get_player_ids(game_id)
+
+    for pid in pids:
+        game_table.update_item(
+            Key={ 'ComponentId': pid },
+            UpdateExpression='SET RoundIndex = :value',
+            ExpressionAttributeValues={
+                ':value': 0
+            }
     )
 
 # Potentially batch-update with PartiQL
@@ -559,11 +572,97 @@ def db_add_event(game_id, player_id, query, difficulty, points_gained, response_
         }
     )
 
+    
+def db_inc_correct_tally(game_id, player_id):
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET CorrectTally = CorrectTally + :inc',
+            ExpressionAttributeValues={
+                ':inc': 1,
+            }
+    )
+    
+def db_inc_incorrect_tally(game_id, player_id):
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET IncorrectTally = IncorrectTally + :inc',
+            ExpressionAttributeValues={
+                ':inc': 1,
+            }
+    )
+
+def db_inc_curr_streak(game_id, player_id):
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET CurrentStreakLength = CurrentStreakLength + :inc',
+            ExpressionAttributeValues={
+                ':inc': 1,
+            }
+    )
+
+    curr_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['CurrentStreak']
+    curr_longest_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['LongestStreak']
+    new_longest_streak = max(curr_streak, curr_longest_streak)
+
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET LongestStreak = :streak',
+            ExpressionAttributeValues={
+                ':streak': new_longest_streak,
+            }
+    )
+
+def db_reset_curr_streak(game_id, player_id):
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET CurrentStreakLength = :inc',
+            ExpressionAttributeValues={
+                ':inc': 0,
+            }
+    )
+
+def db_update_streak(game_id, player_id, response_type):
+    if response_type == "CORRECT":
+        value = "1"
+    elif response_type == "WRONG":
+        value = "X"
+    else:
+        value = "0"
+
+    streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['Streak']
+    streak += value
+    streak = streak[-STREAK_LENGTH:]
+
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET Streak = :streak',
+            ExpressionAttributeValues={
+                ':streak': streak,
+            }
+    )
+
+def db_inc_round_index(game_id, player_id):
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET RoundIndex = RoundIndex + :inc',
+            ExpressionAttributeValues={
+                ':inc': 1,
+            }
+    )
+
+def db_reset_round_index(game_id, player_id):
+    dynamo_resource.Table(game_id).update_item(
+        Key={'ComponentId': player_id},
+            UpdateExpression='SET RoundIndex = :value',
+            ExpressionAttributeValues={
+                ':value': 0,
+            }
+    )
+
 
 def db_get_scoreboard(game_id):
     """ Returns Scoreboard object for a game (or at least a mock version) """ 
     # TODO
-    # Might not be neccessary
     game_table = dynamo_resource.Table(game_id)
     scoreboard_data = game_table.scan(
         ProjectionExpression="ComponentId, Score, CorrectTally, IncorrectTally, RequestCount, Active",
