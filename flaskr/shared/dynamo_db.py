@@ -182,6 +182,15 @@ def db_end_game(game_id):
     # TODO
     # Process Post Game Analysis
     # Store Post Game Analysis in Database
+    dynamo_resource.Table(game_id).update_item(
+        Key={
+            'ComponentId': 'State'
+        },
+        UpdateExpression='SET Ended = :true',
+        ExpressionAttributeValues={
+            ':true': True
+        }
+    )
     return
 
 
