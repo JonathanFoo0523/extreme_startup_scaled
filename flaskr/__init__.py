@@ -307,15 +307,15 @@ def create_app():
         if request.method == "GET":  # fetch event with <event_id>
             return encoder.encode(event)
 
-    @app.get("/api/<game_id>/review/players")
-    def game_existed_players(game_id):
-        # Make sure game exists
-        if not f"{game_id}_players" in db_client.xs.list_collection_names():
-            return NOT_ACCEPTABLE
+    # @app.get("/api/<game_id>/review/players")                         # <-------------------- TODO WHY WE NEED THIS
+    # def game_existed_players(game_id):
+    #     # Make sure game exists
+    #     if not games_manager.game_exists(game_id):
+    #         return NOT_ACCEPTABLE
 
-        curs = db_client.xs[f"{game_id}_players"].find({}, {"id": 1})
-        player_list = [doc["id"] for doc in curs]
-        return encoder.encode(player_list)
+    #     curs = db_client.xs[f"{game_id}_players"].find({}, {"id": 1})
+    #     player_list = [doc["id"] for doc in curs]
+    #     return encoder.encode(player_list)
 
     @app.get("/api/<game_id>/review/existed")
     def game_existed(game_id):
@@ -323,18 +323,15 @@ def create_app():
 
     @app.get("/api/<game_id>/review/finalboard")
     def total_player_scores(game_id):
-        if not f"{game_id}_players" in db_client.xs.list_collection_names():
+        if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
-        return db_client.xs[f"{game_id}_review"].find_one({"item": "finalboard"})[
-            "stats"
-        ]
+        return games_manager.review_finalboard(game_id)
 
     @app.get("/api/<game_id>/review/finalgraph")
     def final_game_graph(game_id):
-        if not f"{game_id}_players" in db_client.xs.list_collection_names():
+        if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
-        out = db_client.xs[f"{game_id}_review"].find_one({"item": "finalgraph"})
-        return encoder.encode(out["stats"])
+        return games_manager.get_game_running_totals(game_id)
 
     @app.get("/api/<game_id>/review/stats")
     def review_stats(game_id):
