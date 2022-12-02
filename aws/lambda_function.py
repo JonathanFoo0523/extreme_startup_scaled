@@ -112,35 +112,7 @@ def administer_question(sqs_message):
         db_set_player_incorrect_tally(game_id, player_id, 0)
         db_set_request_count(game_id, player_id, 0)
         db_add_running_total(game_id, player_id, 0, dt.datetime.now(dt.timezone.utc))
-
-        game_round = db_get_game_round(game_id)
-        next_question = QuestionFactory().next_question(game_round)
-
-        message = {
-        "game_id": game_id,
-        "player_id": player_id,
-        "question_text": next_question.as_text(),
-        "question_answer": next_question.correct_answer(),
-        "prev_delay": prev_delay,
-        "question_points": next_question.points,
-        "question_difficulty": question_difficulty
-        }
-
-        res = queue.send_message(
-            MessageBody=json.dumps(message),
-            DelaySeconds=prev_delay,
-            MessageAttributes={
-                'MessageType': {
-                    'StringValue': 'AdministerQuestion',
-                    'DataType': 'String'
-                },
-                'ModificationHash': {
-                    'StringValue': modification_hash,
-                    'DataType': 'String'
-                },
-            }
-        )
-        return 
+        player["score"] = 0
 
     # 1. Send request to player, and check response
     try:

@@ -238,3 +238,6 @@ class AWSGamesManager:
 
     def review_exists(self, game_id):
         return db_review_exists(game_id)
+
+    def review_finalboard(self, game_id):
+        return db_get_review_finalboard(game_id)

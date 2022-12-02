@@ -180,8 +180,12 @@ def db_set_paused(game_id, value: bool):
 
 def db_end_game(game_id):
     """ Sets ended to true """
-    # TODO
     # Process Post Game Analysis
+    dynamo_resource.Table(game_id).put_item(
+        Item={
+            'ComponentId': "Review",
+        }
+    )
     # Store Post Game Analysis in Database
     dynamo_resource.Table(game_id).update_item(
         Key={
@@ -600,7 +604,7 @@ def db_inc_curr_streak(game_id, player_id):
             }
     )
 
-    curr_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['CurrentStreak']
+    curr_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['CurrentStreakLength']
     curr_longest_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['LongestStreak']
     new_longest_streak = max(curr_streak, curr_longest_streak)
 
@@ -714,6 +718,30 @@ def db_get_game_round(game_id):
     return dynamo_resource.Table(game_id).get_item(Key = {'ComponentId': 'State'})['Item']['Round']
 
 def db_check_state_modification_hash(game_id, modification_hash):
-    # TODO: implement whatever it is
-    return True
+    return dynamo_resource.Table(game_id).get_item(Key = {'ComponentId': 'State'})['Item']['ModificationHash'] == modification_hash
+
+def db_get_review_finalboard(game_id):
+    game_table = dynamo_resource.Table(game_id)
+    scoreboard_data = game_table.scan(
+        ProjectionExpression="ComponentId, #Name, Score, CorrectTally, IncorrectTally, RequestCount, Active, LongestStreak",
+        FilterExpression="attribute_exists(Score)",
+        ExpressionAttributeNames={"#Name": "Name"}
+    )["Items"]
+
+    res = []
+    for entry in scoreboard_data:
+        if not entry['Active']:
+            continue
+        res.append({
+                    'player_id': entry['ComponentId'],
+                    'name': entry['Name'],
+                    'score': entry['Score'],
+                    'longest_streak': entry["LongestStreak"],
+                    'success_ratio': 0 if entry["RequestCount"] == 0 else (entry["CorrectTally"] / entry["RequestCount"]),
+                    })
+
+    return res
+    
+    
+
 
