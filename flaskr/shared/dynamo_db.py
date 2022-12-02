@@ -600,7 +600,7 @@ def db_inc_curr_streak(game_id, player_id):
             }
     )
 
-    curr_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['CurrentStreak']
+    curr_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['CurrentStreakLength']
     curr_longest_streak = dynamo_resource.Table(game_id).get_item(Key={'ComponentId': player_id})['Item']['LongestStreak']
     new_longest_streak = max(curr_streak, curr_longest_streak)
 
