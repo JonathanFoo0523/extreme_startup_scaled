@@ -336,6 +336,7 @@ def create_app():
 
     @app.get("/api/<game_id>/review/stats")
     def review_stats(game_id):
+        return None
         if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
         return games_manager.review_stats(game_id)
