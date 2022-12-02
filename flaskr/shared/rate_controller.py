@@ -16,11 +16,11 @@ class RateController:
 
     def delay_before_next_question(self, prev_delay, result):
         if result == "CORRECT":
-            return max(MIN_REQUEST_INTERVAL_SECS, prev_delay - 1)
+            return max(MIN_REQUEST_INTERVAL_SECS, prev_delay - REQUEST_DELTA)
         elif result == "WRONG":
-            return min(MAX_REQUEST_INTERVAL_SECS, prev_delay + 1)
+            return min(MAX_REQUEST_INTERVAL_SECS, prev_delay + REQUEST_DELTA)
         else:
-            return min(MAX_REQUEST_INTERVAL_SECS, prev_delay + 2)
+            return 2 * AVG_REQUEST_INTERVAL
 
 
     def delay_before_next_request(self, question):
