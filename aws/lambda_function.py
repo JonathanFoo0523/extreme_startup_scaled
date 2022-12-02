@@ -111,6 +111,7 @@ def administer_question(sqs_message):
         db_set_player_incorrect_tally(game_id, player_id, 0)
         db_set_request_count(game_id, player_id, 0)
         db_add_running_total(game_id, player_id, 0, dt.datetime.now(dt.timezone.utc))
+        player["score"] = 0
 
         game_round = db_get_game_round(game_id)
         next_question = QuestionFactory().next_question(game_round)
@@ -139,7 +140,6 @@ def administer_question(sqs_message):
                 },
             }
         )
-        return 
 
     # 1. Send request to player, and check response
     try:
