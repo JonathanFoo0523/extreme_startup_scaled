@@ -11,15 +11,15 @@ ALLOW_CHEATING = True
 PROBLEM_DECREMENT = 50
 STREAK_LENGTH = 30
 
+DEFAULT_DELAY = 5 
+
 sqs_resource = boto3.resource('sqs')
 queue = sqs_resource.get_queue_by_name(QueueName='GameTasks')
 
 def print_dict_nicely(dic):
     print(json.dumps(dic, sort_keys=True, indent=4))
 
-
 def lambda_handler(event, context):
-
     print("The event is as follows:")
     print_dict_nicely(event)
 
@@ -55,7 +55,6 @@ def administer_question(sqs_message):
     question_difficulty = message.get("question_difficulty")  # int
 
 
-
     try:
         game = db_get_game(game_id)
     except ClientError as e:
@@ -80,6 +79,7 @@ def administer_question(sqs_message):
         """)
         return
 
+
     player = None
     try:
         player = db_get_player(game_id, player_id)
@@ -99,7 +99,6 @@ def administer_question(sqs_message):
         queue.send_message(sqs_message)
         return
 
-    # 1. Send request to player, and check response
     if db_get_game(game_id)['round'] == 1 and player['round_index'] == 0:
         # Reset score to 0 once warmup ends, add to running_totals
         db_set_player_score(game_id, player_id, 0)
@@ -107,9 +106,38 @@ def administer_question(sqs_message):
         db_set_player_correct_tally(game_id, player_id, 0)
         db_set_player_incorrect_tally(game_id, player_id, 0)
         db_set_request_count(game_id, player_id, 0)
-
         db_add_running_total(game_id, player_id, 0, dt.datetime.now(dt.timezone.utc))
 
+        game_round = db_get_game_round(game_id)
+        next_question = QuestionFactory().next_question(game_round)
+
+        message = {
+        "game_id": game_id,
+        "player_id": player_id,
+        "question_text": next_question.as_text(),
+        "question_answer": next_question.correct_answer(),
+        "prev_delay": prev_delay,
+        "question_points": next_question.points,
+        "question_difficulty": question_difficulty
+        }
+
+        res = queue.send_message(
+            MessageBody=json.dumps(message),
+            DelaySeconds=next_delay,
+            MessageAttributes={
+                'MessageType': {
+                    'StringValue': 'AdministerQuestion',
+                    'DataType': 'String'
+                },
+                'ModificationHash': {
+                    'StringValue': modification_hash,
+                    'DataType': 'String'
+                },
+            }
+        )
+        return 
+
+    # 1. Send request to player, and check response
     try:
         response = requests.get(player["api"], params={"q": question_text})
 
@@ -141,11 +169,12 @@ def administer_question(sqs_message):
     db_add_running_total(game_id, player_id, new_score, datetime.now(dt.timezone.utc))
     db_set_player_score(game_id, player_id, new_score)
 
+
     # 3. Schedule next question on queue
     game_round = db_get_game_round(game_id)
     next_question = QuestionFactory().next_question(game_round)
     next_delay = RateController().delay_before_next_question(prev_delay, result)
-    print("next delay is", next_delay)
+    print("Next delay is", next_delay)
 
     message = {
         "game_id": game_id,
@@ -171,15 +200,14 @@ def administer_question(sqs_message):
             },
         }
     )
-    print(f"sent message as follows:")
+
+    print(f"Sent message as follows:")
     print_dict_nicely(message)
     return json.dumps(res)
 
 
-
 def add_event(game_id, player_id, question_text, question_difficulty, points_gained, result):
     db_add_event(game_id, player_id, question_text, question_difficulty, points_gained, result)
-
 
 
 def calculate_points_gained(player_position, question_points, result, lenient=True):
