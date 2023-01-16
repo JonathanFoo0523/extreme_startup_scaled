@@ -312,7 +312,7 @@ class GeneralKnowledgeQuestion(Question):
     def __init__(self, question="", answer=""):
         super().__init__
         if question == "" or answer == "":
-            with open("flaskr/yaml/general_knowledge.yaml", "r") as infile:
+            with open("../../shared/yaml/general_knowledge.yaml", "r") as infile:
                 quiz_cards = yaml.safe_load(infile)
             card = random.choice(quiz_cards)
             self.question = card["question"]
@@ -334,7 +334,7 @@ class AnagramQuestion(Question):
     def __init__(self, anagram="", correct="", incorrect=[]):
         super().__init__
         if anagram == "" or correct == "" or len(incorrect) == 0:
-            with open("flaskr/yaml/anagrams.yaml", "r") as infile:
+            with open("../../shared/yaml/anagrams.yaml", "r") as infile:
                 anagrams = yaml.safe_load(infile)
 
             anagram = random.choice(anagrams)

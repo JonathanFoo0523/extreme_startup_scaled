@@ -120,8 +120,9 @@ class Players:
 
     def query_players_by_score(self, game_id, projection=[], forward=False, **eq_filter):
         kwargs = {'KeyConditionExpression': Key('game_id').eq(game_id),
-                  'IndexName': "game_id-score-index",
-                  "ScanIndexForward": forward}
+                  'IndexName': "score-index",
+                  "ScanIndexForward": forward,
+                  "ConsistentRead": True}
 
         if eq_filter:
             filterExpression = Attr('name').ne("")

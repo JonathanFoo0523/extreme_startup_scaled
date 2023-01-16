@@ -7,14 +7,14 @@ QUESTION_TYPES = [
     MaximumQuestion,
     MultiplicationQuestion,
     SquareCubeQuestion,
-    GeneralKnowledgeQuestion,
+    # GeneralKnowledgeQuestion,
     PrimesQuestion,
     SubtractionQuestion,
     PowerQuestion,
     AdditionAdditionQuestion,
     AdditionMultiplicationQuestion,
     MultiplicationAdditionQuestion,
-    AnagramQuestion,
+    # AnagramQuestion,
     ScrabbleQuestion,
 ]
 

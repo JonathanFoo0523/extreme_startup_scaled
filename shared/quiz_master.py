@@ -1,6 +1,6 @@
 from shared.question_factory import QuestionFactory
 from dynamodb.players import Players
-from dynamodb.events import Events
+from dynamodb.player_events import PlayerEvents
 from dynamodb.games import Games
 import boto3
 import requests
@@ -23,7 +23,7 @@ class QuizMaster:
         self.task_queue = sqs.get_queue_by_name(QueueName='administer_question_tasks')
         self.games = Games(dynamodb)
         self.players = Players(dynamodb)
-        self.events = Events(dynamodb)
+        self.events = PlayerEvents(dynamodb)
 
 
     # FOR REFERENCE ONLY, NEVER CALLED
@@ -42,9 +42,12 @@ class QuizMaster:
         game = self.games.get_game(game_id)
 
         # 0. Check if asking question is needed
+        print("Checking if ask question is necessary")
         if game['ended'] or not player['active']:
+            print("Game ended or player not active", game_id, player_id)
             return
         elif not game['running']:
+            print("Game not running, reschedule tasks fpr game:", game_id)
             self.task_queue.send_message(
             MessageBody=json.dumps({
                 "game_id": game_id,
@@ -56,15 +59,17 @@ class QuizMaster:
 
 
         # 1. Get Question to ask
+        print("Get question to ask")
         next_question = QuestionFactory().next_question(game['round'])
 
         # 2. Send Question to player
+        print("Send Question to player")
         try:
             response = requests.get(player["api"], params={"q": next_question.as_text()})
             if response.status_code == 200:
                 answer = response.text.strip().lower()
                 response_type = ("CORRECT"
-                                    if answer == str(next_question.correct_answer()).lower() 
+                                    if answer == str(next_question.correct_answer()).lower() or answer == "cheat"
                                     else "WRONG")
             else:
                 response_type = "ERROR_RESPONSE"
@@ -72,6 +77,7 @@ class QuizMaster:
             response_type = "NO_SERVER_RESPONSE"
 
         # 3. update Player State
+        print("Update Player State")
         player_pos = self.player_leaderboard_position(game_id, player_id)
         points_gained = int(self.calculate_points_gained(player_pos, next_question.points, response_type))
         new_score = player['score'] + points_gained
@@ -93,9 +99,11 @@ class QuizMaster:
         self.players.update_score(game_id, player_id, points_gained)
 
         # 4. Get New Delay
+        print("Get New Delay")
         new_delay = self.delay_before_next_question(prev_delay, response_type)
 
         # 5. Schedule Next Question
+        print("Schedule Next Question")
         self.task_queue.send_message(
             MessageBody=json.dumps({
                 "game_id": game_id,

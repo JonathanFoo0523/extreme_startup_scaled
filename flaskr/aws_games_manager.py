@@ -4,7 +4,7 @@ from shared.question_factory import MAX_ROUND
 # from flaskr.json_encoder import JSONEncoder
 from dynamodb.games import Games
 from dynamodb.players import Players
-from dynamodb.events import Events
+from dynamodb.player_events import PlayerEvents
 from dynamodb.game_events import GameEvents
 from uuid import uuid4
 # from flaskr.game_stats import GameStats
@@ -31,7 +31,7 @@ class AWSGamesManager:
 
         self.games = Games(dynamodb)
         self.players = Players(dynamodb)
-        self.events = Events(dynamodb)
+        self.player_events = PlayerEvents(dynamodb)
         self.game_events = GameEvents(dynamodb)
         self.administer_question_queue = sqs.get_queue_by_name(QueueName='administer_question_tasks')
         self.game_monitor_queue = sqs.get_queue_by_name(QueueName='game_monitor_tasks')
@@ -105,7 +105,7 @@ class AWSGamesManager:
                 attributes['streak'] = ""
                 attributes['correct_tally'] = attributes['incorrect_tally'] = 0
                 attributes['request_counts'] = attributes['score'] = 0
-                self.events.add_event(game_id, player['player_id'], 0, "WARMUP_ENDED", 1, 0, "")
+                self.player_events.add_event(game_id, player['player_id'], 0, "WARMUP_ENDED", 1, 0, "")
                 attributes['modification_hash'] = uuid4().hex[:6]
                 self.players.update_player_attribute(game_id, player['player_id'], **attributes)
                 self.administer_question_queue.send_message(
@@ -124,7 +124,7 @@ class AWSGamesManager:
 
     def unpause_game(self, game_id):
         """ Unpause a game """
-        game = self.games.update_round(game_id)
+        game = self.games.get_game(game_id)
         self.games.update_games_attribute(game_id, running=True)
         self.game_monitor_queue.send_message(
             MessageBody=json.dumps({
@@ -142,10 +142,12 @@ class AWSGamesManager:
     def set_auto_mode(self, game_id):
         """ Turns on auto advance round """
         self.games.update_games_attribute(game_id, auto_mode=True)
+        game = self.games.get_game(game_id)
         self.game_monitor_queue.send_message(
             MessageBody=json.dumps({
                 "game_id": game_id,
                 "type": "AUTO_INCREMENT",
+                "modification_hash": game['modification_hash']
         }),
             DelaySeconds=0,
         )
@@ -163,7 +165,7 @@ class AWSGamesManager:
             temp = {}
             for pid in list(player_id):
                 temp[pid] =  self.players.get_player(game_id, pid)
-                events = self.events.query_events_by_timestamp(game_id, player_id=pid)
+                events = self.player_events.query_events_by_timestamp(game_id, player_id=pid)
                 for event in events:
                     event['player_id'] = event['player_event_id'][:8]
                     event['event_id'] = event['player_event_id'][8:]
@@ -172,7 +174,7 @@ class AWSGamesManager:
         else:
             players = self.players.query_players(game_id, active=True)
             for player in players:
-                events = self.events.query_events_by_timestamp(game_id, player_id=player['player_id'])
+                events = self.player_events.query_events_by_timestamp(game_id, player_id=player['player_id'])
                 for event in events:
                     event['player_id'] = event['player_event_id'][:8]
                     event['event_id'] = event['player_event_id'][8:]
@@ -186,7 +188,7 @@ class AWSGamesManager:
 
     def get_game_running_totals(self, game_id) -> list:
         """ Gets list of objects in the form {"time": timestamp, "pid": score} """
-        game_events = self.events.query_events_by_timestamp(game_id, projection=['timestamp', 'player_event_id', 'score'], forward=True)
+        game_events = self.player_events.query_events_by_timestamp(game_id, projection=['timestamp', 'player_event_id', 'score'], forward=True)
         ls = [ {"time": event['timestamp'], event['player_event_id'][:8]: event['score']} for event in game_events]
         ls.insert(0, {'time': ls[0]['time']})
         return ls
@@ -244,11 +246,11 @@ class AWSGamesManager:
 
     def get_player_events(self, game_id, player_id) -> list:
         """ Returns list of event objects for a player """
-        return self.events.query_events_for_player(game_id, player_id)
+        return self.player_events.query_events_for_player(game_id, player_id)
 
     def get_player_event(self, game_id, player_id, event_id) -> list:
         """ Returns list of event objects for a player """
-        return self.events.get_event_for_player(game_id, player_id, event_id)
+        return self.player_events.get_event_for_player(game_id, player_id, event_id)
 
 
     # SIGNATURE CHANGE: FROM *player_id

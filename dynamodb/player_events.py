@@ -4,14 +4,14 @@ from boto3.dynamodb.conditions import Key, Attr
 import datetime as dt
 
 
-class Events:
+class PlayerEvents:
     def __init__(self, dyn_resource):
         self.dyn_resource = dyn_resource
-        self.table = dyn_resource.Table('events')
+        self.table = dyn_resource.Table('player_events')
 
 
     # FOR REFERENCE ONLY, NEVER CALLED
-    def __create_table(self, table_name='players'):
+    def __create_table(self, table_name='player_events'):
         try:
             self.table = self.dyn_resource.create_table(
                 TableName=table_name,
@@ -21,7 +21,7 @@ class Events:
                 ],
                 AttributeDefinitions=[
                     {'AttributeName': 'game_id', 'AttributeType': 'S'},
-                    {'AttributeName': 'player_id', 'AttributeType': 'S'}
+                    {'AttributeName': 'player_event_id', 'AttributeType': 'S'}
                 ],
                 ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacityUnits': 10})
             self.table.wait_until_exists()
@@ -73,8 +73,9 @@ class Events:
 
     def query_events_by_timestamp(self, game_id, projection=[], forward=False, **eq_filter):
         kwargs = {'KeyConditionExpression': Key('game_id').eq(game_id),
-                  'IndexName': "game_id-timestamp-index",
-                  "ScanIndexForward": forward}
+                  'IndexName': "timestamp-index",
+                  "ScanIndexForward": forward,
+                  "ConsistentRead": True}
 
         if eq_filter:
             filterExpression = Attr('player_event_id').ne("")

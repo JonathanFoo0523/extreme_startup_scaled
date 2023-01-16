@@ -1,5 +1,5 @@
 from dynamodb.players import Players
-from dynamodb.events import Events
+from dynamodb.player_events import PlayerEvents
 from dynamodb.games import Games
 from dynamodb.game_events import GameEvents
 import boto3
@@ -20,7 +20,7 @@ class GameMonitor:
         self.task_queue = sqs.get_queue_by_name(QueueName='game_monitor_tasks')
         self.games = Games(dynamodb)
         self.players = Players(dynamodb)
-        self.events = Events(dynamodb)
+        self.player_events = PlayerEvents(dynamodb)
         self.game_events = GameEvents(dynamodb)
 
     # FOR REFERENCE ONLY, NEVER CALLED
@@ -60,23 +60,25 @@ class GameMonitor:
         
         game = self.games.get_game(game_id)
         if game['ended'] or not game['running'] or not game['auto_mode']:
+            print("Game ended, not running, or not in auto mode")
             return
         elif game['auto_mode'] and game['round'] > 0:
-            players = self.players.query_players_by_score(game_id, ["streak"], active=True)
+            players = self.players.query_players_by_score(game_id, ["streak", "round_index", "player_id"], active=True)
             advancable_players = 0
 
             for pos, player in enumerate(players):
-                streak, round_index = player['streak'], player['round_index']
+                streak, round_index = player['streak'], int(player['round_index'])
                 round_streak = streak[-round_index:] if round_index != 0 else ""
                 c_tail = self.streak_length(round_streak, "1")
 
                 if c_tail >= 6 and pos <= max(0.6 * len(players), 1):
                     advancable_players += 1
 
-            if advancable_players / max(len(players), 1) > INCREMENT_ROUND_RATIO_THESHOLD:
+            if advancable_players / max(len(players), 1) > INCREMENT_ROUND_RATIO_THESHOLD and game['round'] < 6:
                 self.games.update_round(game_id)
                 for player in players:
                     self.players.update_player_attribute(game_id, player['player_id'], round_index=0)
+                    print("DIAGNOSTIC", self.players.get_player(game_id, player["player_id"]))
 
         self.task_queue.send_message(
             MessageBody=json.dumps({
