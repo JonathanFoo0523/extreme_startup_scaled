@@ -40,9 +40,10 @@ function Admin () {
         if (notifyAdvance) {
           showInfoNotification('Current Round: ' + response.round, 'The round has been automatically advanced')
         }
+        console.log(response)
         setRound(response.round)
         setMaxRound(response.max_round)
-        setGamePaused(response.paused)
+        setGamePaused(!response.running)
         setPlayerNo(response.players.length)
         setTeamsNeedingHelp(response.players_to_assist.needs_assistance)
         setTeamsBeingHelped(response.players_to_assist.being_assisted)

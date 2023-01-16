@@ -112,7 +112,7 @@ function GameReview () {
                     <tr key={keyPoint.id}>
                       <td>{keyPoint.title}</td>
                       <td style={{ width: descPercentage }}>{keyPoint.description}</td>
-                      <td>{keyPoint.time}</td>
+                      <td>{keyPoint.timestamp}</td>
                       <td>{keyPoint.player_id}</td>
                     </tr>
                   ))

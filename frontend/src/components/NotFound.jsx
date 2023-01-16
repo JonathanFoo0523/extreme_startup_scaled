@@ -15,7 +15,7 @@ function NotFound () {
         transform: 'translate(-50%, -50%)'
       }}>
       <Stack align="center" spacing="xl">
-        <Title order={1} color="white" weight={1000}>Page not found</Title>
+        <Title order={1} color="white" weight={1000}>Page Not found</Title>
         <HomeButton size='lg' />
       </Stack>
     </Card>

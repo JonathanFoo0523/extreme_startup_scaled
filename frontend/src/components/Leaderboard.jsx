@@ -63,8 +63,8 @@ function Leaderboard () {
           <tbody>
             {
               leaderboard.map((player) => (
-                <tr key={player.id} style={(player.id === playerID) ? { background: 'rgb(255,255,255,0.1)' } : {}}>
-                  <td>{player.id}</td>
+                <tr key={player.player_id} style={(player.player_id === playerID) ? { background: 'rgb(255,255,255,0.1)' } : {}}>
+                  <td>{player.player_id}</td>
                   <td style={{ color: stringToColour(player.name) }}>{player.name}</td>
 
                   <td style={{ width: '300px' }}>

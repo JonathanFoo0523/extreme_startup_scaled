@@ -31,7 +31,7 @@ function Home () {
       showLoadingNotification('create-game', 'Game creation in progress', 'Creating game...')
       const response = await createNewGame({ password: pwd })
       updateLoadingNotification('create-game', 'Success!', 'Game successfully created!')
-      setNewGameId(response.id)
+      setNewGameId(response.game_id)
       setOpenedChoosePwd(false)
       setOpenedCreateGame(true)
     } catch (error) {

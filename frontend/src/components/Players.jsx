@@ -94,16 +94,16 @@ function Players () {
           </thead>
           <tbody>
             {players.map(player => (
-              <tr key={player.id} onClick={() => navigate(player.id)}
-                style={(player.id === playerID) ? { background: 'rgb(255,255,255,0.1)' } : {}}>
-                <td>{player.id}</td>
+              <tr key={player.player_id} onClick={() => navigate(player.id)}
+                style={(player.player_id === playerID) ? { background: 'rgb(255,255,255,0.1)' } : {}}>
+                <td>{player.player_id}</td>
                 <td>{player.name}</td>
                 <td>{player.api}</td>
                 {
-                  isAdmin || (player.id === playerID)
+                  isAdmin || (player.player_id === playerID)
                     ? <td>
                       <Button variant="outline" color="red" radius="md" size="md"
-                        onClick={(event) => withdrawPlayer(event, player.id)}>
+                        onClick={(event) => withdrawPlayer(event, player.player_id)}>
                         Withdraw
                       </Button>
                     </td>

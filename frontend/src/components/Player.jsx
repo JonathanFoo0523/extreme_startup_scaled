@@ -24,7 +24,7 @@ function Player () {
       try {
         const response = await fetchPlayer(params.gameId, params.id)
         setPlayerData(response)
-        setEvents(response.events.reverse())
+        setEvents(response.events)
       } catch (error) {
         console.error(error)
       }
@@ -48,7 +48,7 @@ function Player () {
       <Space h="md" />
       <Card shadow="sm" p="lg" radius="md" withBorder>
         <h3>Player ID</h3>
-        <h4 style={{ color: 'grey' }} data-cy='player-id'>{playerData.id}</h4>
+        <h4 style={{ color: 'grey' }} data-cy='player-id'>{playerData.player_id}</h4>
         <br />
         <h3>Game ID</h3>
         <div style={{ display: 'inline-flex', flexDirection: 'row' }}>
@@ -61,7 +61,7 @@ function Player () {
           </Button>
         </div>
         <Space h="md" />
-        {isAdmin || (playerData.id === playerID)
+        {isAdmin || (playerData.player_id === playerID)
           ? <div><br /><h3>API</h3><h4 style={{ color: 'grey' }} data-cy='api'>{playerData.api}</h4></div>
           : <></>}
         <br />
