@@ -28,7 +28,7 @@ export function gameReviewUrl (gameId) {
 /**
  * URLs for requests
  */
-const API_PREFIX = '/api'
+const API_PREFIX = 'https://lqdko0rzp8.execute-api.us-east-1.amazonaws.com'
 
 // Management of all games
 export function homeAPI () {

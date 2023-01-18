@@ -38,7 +38,6 @@ class QuizMaster:
             print("Invalid Modification Hash for ", player_id)
             return
         
-        player = self.players.get_player(game_id, player_id)
         game = self.games.get_game(game_id)
 
         # 0. Check if asking question is needed
@@ -87,7 +86,6 @@ class QuizMaster:
 
         self.events.add_event(game_id, player_id, new_score, next_question.as_text(), game['round'], points_gained, response_type)
         
-        # new_player_atttibute = {'score': new_score, 'streak': new_streak, 'needs_assistance': needs_assistance}
         new_player_atttibute = {'streak': new_streak, 'needs_assistance': needs_assistance}
         increment = ['round_index', 'request_counts']
         if response_type == 'CORRECT':

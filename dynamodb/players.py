@@ -152,7 +152,7 @@ class Players:
                 UpdateExpression='set modification_hash = :new_hash',
                 ConditionExpression="modification_hash = :prev_hash",
                 ExpressionAttributeValues={':new_hash' : uuid4().hex[:6], ":prev_hash": modification_hash},
-                ReturnValues="UPDATED_NEW")
+                ReturnValues="ALL_NEW")
         except ClientError as err:
             print(
                 "Couldn't validate modification_hash for game %s player %s: %s: %s",

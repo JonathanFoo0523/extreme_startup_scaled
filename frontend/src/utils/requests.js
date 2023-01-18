@@ -7,7 +7,8 @@ import {
 import { alertError, showFailureNotification, showErrorNotification, playersAsArray, HTTPError } from './utils'
 
 const instance = axios.create({
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true
 })
 
 // Need to test returning response.json() vs response.data

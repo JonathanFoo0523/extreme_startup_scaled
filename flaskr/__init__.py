@@ -3,12 +3,11 @@ from flask import (
     Flask,
     request,
     redirect,
-    make_response,
     url_for,
     send_from_directory,
     session,
 )
-from flaskr.aws_games_manager import AWSGamesManager
+from shared.games_manager import GamesManager
 import threading
 import secrets
 from random import randint
@@ -41,7 +40,7 @@ def create_app():
     app.config["SECRET_KEY"] = secrets.token_hex()
     app.json_encoder = JSONSanitizer
 
-    games_manager = AWSGamesManager()
+    games_manager = GamesManager()
 
 
     # This is a catch-all function that will redirect anything not caught by the other rules
@@ -307,6 +306,13 @@ def create_app():
         if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
         return games_manager.review_analysis(game_id)
+
+
+
+
+
+
+
 
     # FORGIVE ME
     bot_responses = {n: [f"Bot{n}", 0] for n in range(100)}

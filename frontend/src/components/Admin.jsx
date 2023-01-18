@@ -28,13 +28,14 @@ function Admin () {
   // Fetches game data every 2 seconds (current round and number of players)
   useEffect(() => {
     const getGameData = async () => {
-      let response
-      try {
-        response = await fetchGame(params.gameId)
-      } catch (error) {
-        showInfoNotification('Game Abandoned', 'An admin has ended the game with no players.')
-        navigate(homeUrl())
-      }
+      // let response
+      const response = await fetchGame(params.gameId)
+      // try {
+      //   response = await fetchGame(params.gameId)
+      // } catch (error) {
+      //   showInfoNotification('Game Abandoned', 'An admin has ended the game with no players.')
+      //   navigate(homeUrl())
+      // }
       try {
         const notifyAdvance = autoAdvance && response.round > round
         if (notifyAdvance) {
