@@ -11,10 +11,10 @@ Visit https://d1zlib8d3siide.cloudfront.net/ to create a game or join a game as 
 
 * **AWS S3 bucket** - An object storage service which stores the built React app and other assets such as icons related to frontend
 * **Amazon Cloudfront** - A distribution service which make use of CDN to speed up distribution of frontend React contents to end users
-* **Amazon API Gateway** - To link and manage API request from React application running on user's browser to the corresponding Lambda functions. Also configured to handle CORS preflight response and.
-* **AWS Lambda(API handlers)** - To handle api request to manage games and players. It achieve this by scheduling task in SQS or directly read ot write games/players state stored in dynamoDB.
-* **AWS SQS** - `game-monitor-tasks` and `administer-questions-tasks` contains tasks which is run at regular interval such as task, and tasks which is scheduled to run at different delay respectivelt
-* **AWS Lambda(GameMonitor and QuizMaster)** - Pick up tasks from SQS to run task such as auto-increment round, check for new best players, administering questions to player etc. 
+* **Amazon API Gateway** - To link and manage API request from React application running on user's browser to the corresponding Lambda functions. Also configured to handle CORS preflight requests
+* **AWS Lambda(API handlers)** - To handle api request to manage games and players. It achieve this by scheduling task in SQS or directly read ot write games/players state stored in dynamoDB
+* **AWS SQS** - `game-monitor-tasks` and `administer-questions-tasks` contains tasks which is run at regular interval such as task, and tasks which is scheduled to run at different delay respectively
+* **AWS Lambda(GameMonitor and QuizMaster)** - Pick up tasks from SQS to run task such as auto-increment round, check for new best players, administering questions to player etc
 * **AWS DynamoDB** - Store games and players state such as scoreboard, current round, player response, game events and etc
 
 
