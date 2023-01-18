@@ -9,6 +9,14 @@ Visit https://d1zlib8d3siide.cloudfront.net/ to create a game or join a game as 
 ## Architecture
 <img src="https://github.com/JonathanFoo0523/extreme_startup_scaled/blob/restructure/extreme_startup_diagram.png" width="750">
 
+* **AWS S3 bucket** - An object storage service which stores the built React app and other assets such as icons related to frontend
+* **Amazon Cloudfront** - A distribution service which make use of CDN to speed up distribution of frontend React contents to end users
+* **Amazon API Gateway** - To link and manage API request from React application running on user's browser to the corresponding Lambda functions. Also configured to handle CORS preflight response and.
+* **AWS Lambda(API handlers)** - To handle api request to manage games and players. It achieve this by scheduling task in SQS or directly read ot write games/players state stored in dynamoDB.
+* **AWS SQS** - `game-monitor-tasks` and `administer-questions-tasks` contains tasks which is run at regular interval such as task, and tasks which is scheduled to run at different delay respectivelt
+* **AWS Lambda(GameMonitor and QuizMaster)** - Pick up tasks from SQS to run task such as auto-increment round, check for new best players, administering questions to player etc. 
+* **AWS DynamoDB** - Store games and players state such as scoreboard, current round, player response, game events and etc
+
 
 ## Version history
 The original software is written by [rchatley](https://github.com/rchatley/extreme_startup), which is hosted locally and designed to be played by a small group of people in a room. As part of the college's group project, my group and I [rewrote the software](https://gitlab.doc.ic.ac.uk/g226002123/extreme-restartup) using modern and well-tested code, revamped the user interface, add additional features such as games and player monitoring, and enable multiple game session to be hosted in a self-service way. You can play create and join the game which is deployed [on this site](https://extreme-startup.fly.dev/). 
