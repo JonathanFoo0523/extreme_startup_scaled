@@ -7,17 +7,15 @@ To play the game, players need to register an endpoint with the game server, and
 Visit https://d1zlib8d3siide.cloudfront.net/ to create a game or join a game as a player/moderator. To join as a player, you will need an API endpoint to receive and respond to questions, and register it when joining the game.
 
 ## Architecture
-[Diagram here]
+<img src="https://github.com/JonathanFoo0523/extreme_startup_scaled/blob/restructure/extreme_startup_diagram.png" width="750">
 
-## File Structure
-[Code here]
 
 ## Version history
 The original software is written by [rchatley](https://github.com/rchatley/extreme_startup), which is hosted locally and designed to be played by a small group of people in a room. As part of the college's group project, my group and I [rewrote the software](https://gitlab.doc.ic.ac.uk/g226002123/extreme-restartup) using modern and well-tested code, revamped the user interface, add additional features such as games and player monitoring, and enable multiple game session to be hosted in a self-service way. You can play create and join the game which is deployed [on this site](https://extreme-startup.fly.dev/). 
 
-We also attempted to implement [a scaled version](https://gitlab.doc.ic.ac.uk/g226002123/extreme-restartup-scaled) of the software which supports elastic scalability using AWS Simple Queue Service(SQS) and cloud functions, but the version still required a flask server to be deployed and run 24/7, and fall shorts in multiple aspects to support stable gameplay.
+We also attempted to implement [a scaled version](https://gitlab.doc.ic.ac.uk/g226002123/extreme-restartup-scaled) of the software which supports elastic scalability using AWS Simple Queue Service(SQS) and AWS Lambda, but the version still required a flask server to be deployed and run 24/7, and fall shorts in multiple aspects to support a stable gameplay.
 
-This version picks up from the scaled version, is implemented to support true elastic scalability and serverless model, and restructures the storage structure and code to support more efficient queries and updates of the game state.
+This version picks up from the scaled version, and is implemented to support true elastic scalability and serverless model. The storage structure and code has been restructured to support more efficient queries and updates of the game states.
 
 
 ## Known Issues
