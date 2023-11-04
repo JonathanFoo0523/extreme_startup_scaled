@@ -14,7 +14,7 @@ function Chart ({ gameId }) {
     const getChartData = async () => {
       try {
         const pResponse = await fetchAllPlayers(gameId)
-        setPlayerIds(pResponse.map((p) => ({ id: p.id, name: p.name })))
+        setPlayerIds(pResponse.map((p) => ({ id: p.player_id, name: p.name })))
 
         const response = await fetchGameScores(gameId)
         const startTime = response[0].time

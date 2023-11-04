@@ -17,8 +17,8 @@ function PlayerTable ({ events }) {
       <tbody>
         {
           events?.map((event) => (
-            <tr key={event.id}>
-              <td>{event.id}</td>
+            <tr key={event.event_id}>
+              <td>{event.event_id}</td>
               <td>{event.query}</td>
               <td>{event.difficulty}</td>
               <td>{event.points_gained}</td>

@@ -3,18 +3,16 @@ from flask import (
     Flask,
     request,
     redirect,
-    make_response,
     url_for,
     send_from_directory,
     session,
 )
-from flaskr.player import Player
-from flaskr.aws_games_manager import AWSGamesManager
-from flaskr.json_encoder import JSONEncoder
-from flaskr.shared.questions import *
+from shared.games_manager import GamesManager
 import threading
 import secrets
 from random import randint
+from flaskr.json_sanitizer import JSONSanitizer
+import os
 
 # PRODUCTION CONSTANT(S)
 QUESTION_TIMEOUT = 10
@@ -40,13 +38,10 @@ def create_app():
     app.url_map.strict_slashes = False
 
     app.config["SECRET_KEY"] = secrets.token_hex()
+    app.json_encoder = JSONSanitizer
 
-    games_manager = AWSGamesManager()
+    games_manager = GamesManager()
 
-    # Temporary list of ended game ids
-    ended_games = []
-
-    encoder = JSONEncoder()
 
     # This is a catch-all function that will redirect anything not caught by the other rules
     # to the react webpages
@@ -63,26 +58,25 @@ def create_app():
         return send_from_directory(app.root_path, "favicon.ico")
 
     # Game Management
+
     @app.route("/api", methods=["GET", "POST", "DELETE"])
     def api_index():
         if request.method == "GET":  # fetch all games
             return games_manager.get_all_games()
 
-        elif (
-            request.method == "POST"
-        ):  # create new game -- initially no players -- passkey for administrators
+        elif (request.method == "POST"):
             if "password" not in request.get_json():
                 return NOT_ACCEPTABLE
 
             new_game = games_manager.new_game(request.get_json()["password"])
-            add_session_admin(new_game, session)
-            return games_manager.get_game(new_game)
+            add_session_admin(new_game['game_id'], session)
+            return new_game
 
         elif (
             request.method == "DELETE"
         ):  # delete all games - only for admin of all games
-            for gid in list(games_manager.get_all_games().keys()):
-                if is_admin(gid, session):
+            for game in games_manager.get_all_games():
+                if is_admin(game['game_id'], session):
                     continue
                 return UNAUTHORIZED
 
@@ -158,7 +152,6 @@ def create_app():
 
             elif "end" in r:  # End the <game_id> instance
                 games_manager.delete_games(game_id)
-                ended_games.append(game_id)           # <-------------------- TODO REMOVE LATER AND ASAP(AP)
                 return ("GAME_ENDED", 200)
 
             elif "assisting" in r: # r["assisting"] is player_name
@@ -176,15 +169,14 @@ def create_app():
             games_manager.delete_games(game_id)
             return {"deleted": game_id}
 
+
     @app.route("/api/<game_id>/scores", methods=["GET"])
     def game_scores(game_id):
         if not games_manager.game_exists(game_id):
             return NOT_ACCEPTABLE
 
-        cumulative_sums = games_manager.get_game_running_totals(game_id)
-        r = make_response(cumulative_sums)
-        r.mimetype = "application/json"
-        return r
+        return games_manager.get_game_running_totals(game_id)
+
 
     # Managing all players
     @app.route("/api/<game_id>/players", methods=["GET", "POST", "DELETE"])
@@ -193,21 +185,15 @@ def create_app():
             return NOT_ACCEPTABLE
 
         if request.method == "GET":  # fetch all <game_id>'s players
-            r = make_response(
-                encoder.encode({"players": games_manager.get_game_players(game_id)})
-            )
-            r.mimetype = "application/json"
-            return r
+            return {"players": games_manager.get_game_players(game_id)}
 
         elif request.method == "POST":  # create a new player -- initialise thread
             new_player = games_manager.add_player_to_game(
                 game_id, request.get_json()["name"], request.get_json()["api"]
             )
-            session["player"] = new_player["id"]
+            session["player"] = new_player["game_id"]
 
-            r = make_response(encoder.encode(new_player))
-            r.mimetype = "application/json"
-            return r
+            return new_player
 
         elif (
             request.method == "DELETE"
@@ -226,11 +212,6 @@ def create_app():
 
         return games_manager.get_players_to_assist(game_id)
 
-    @app.get("/api/<game_id>/gameover")                                     # <-------------------- TODO WHY WE NEED THIS
-    def gameover(game_id):
-        r = make_response(encoder.encode({"game_over": game_id in ended_games}))
-        r.mimetype = "application/json"
-        return r
 
     # Managing <player_id> player
     @app.route("/api/<game_id>/players/<player_id>", methods=["GET", "PUT", "DELETE"])
@@ -242,9 +223,7 @@ def create_app():
             return NOT_ACCEPTABLE
 
         if request.method == "GET":  # fetch player with <player_id>
-            return encoder.encode(
-                games_manager.get_game_players(game_id, player_id)[player_id]
-            )
+            return games_manager.get_game_players(game_id, player_id)[player_id]
         elif (
             request.method == "PUT"
         ):  # update player (change name/api, NOT event management)
@@ -261,9 +240,7 @@ def create_app():
                     game_id, player_id, api=request.get_json()["api"]
                 )
 
-            return encoder.encode(
-                games_manager.get_game_players(game_id, player_id)[player_id]
-            )
+            return games_manager.get_game_players(game_id, player_id)[player_id]
 
         elif request.method == "DELETE":  # delete player with id
             if not (is_admin(game_id, session) or is_player(player_id, session)):
@@ -282,7 +259,7 @@ def create_app():
             return NOT_ACCEPTABLE
 
         if request.method == "GET":  # fetch all events for <game_id> player <player_id>
-            return encoder.encode(
+            return (
                 {"events": games_manager.get_player_events(game_id, player_id)}
             )
 
@@ -295,37 +272,21 @@ def create_app():
         if not (
             games_manager.game_exists(game_id)
             and games_manager.player_exists(game_id, player_id)
-        ) or event_id not in map(
-            lambda e: e.event_id, games_manager.get_player_events(game_id, player_id)
         ):
             return NOT_ACCEPTABLE
 
-        event = filter(
-            lambda e: e.id == event_id,
-            games_manager.get_player_events(game_id, player_id),
-        )[0]
-        if request.method == "GET":  # fetch event with <event_id>
-            return encoder.encode(event)
+        return games_manager.get_player_event(game_id, player_id, event_id)
 
-    # @app.get("/api/<game_id>/review/players")                         # <-------------------- TODO WHY WE NEED THIS
-    # def game_existed_players(game_id):
-    #     # Make sure game exists
-    #     if not games_manager.game_exists(game_id):
-    #         return NOT_ACCEPTABLE
-
-    #     curs = db_client.xs[f"{game_id}_players"].find({}, {"id": 1})
-    #     player_list = [doc["id"] for doc in curs]
-    #     return encoder.encode(player_list)
 
     @app.get("/api/<game_id>/review/existed")
-    def game_existed(game_id):
+    def review_existed(game_id):
         return {"existed": games_manager.game_exists(game_id) and games_manager.review_exists(game_id)}
 
     @app.get("/api/<game_id>/review/finalboard")
     def total_player_scores(game_id):
         if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
-        print("finalboard", games_manager.review_finalboard(game_id))
+        print(games_manager.review_finalboard(game_id))
         return games_manager.review_finalboard(game_id)
 
     @app.get("/api/<game_id>/review/finalgraph")
@@ -336,7 +297,6 @@ def create_app():
 
     @app.get("/api/<game_id>/review/stats")
     def review_stats(game_id):
-        return None
         if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
         return games_manager.review_stats(game_id)
@@ -346,6 +306,13 @@ def create_app():
         if not games_manager.game_exists(game_id):
             return ("Game id not found", NOT_FOUND)
         return games_manager.review_analysis(game_id)
+
+
+
+
+
+
+
 
     # FORGIVE ME
     bot_responses = {n: [f"Bot{n}", 0] for n in range(100)}

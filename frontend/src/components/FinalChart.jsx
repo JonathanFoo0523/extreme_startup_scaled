@@ -21,6 +21,7 @@ function FinalChart ({ gameId, players }) {
         })
 
         setChartData(response)
+        console.log(response, players)
       } catch (error) {
         console.error(error)
         if (error.response && error.response.status === 406) {

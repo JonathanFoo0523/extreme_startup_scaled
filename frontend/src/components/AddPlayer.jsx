@@ -22,7 +22,7 @@ function AddPlayer () {
     try {
       const response = await createPlayer(gameId, name, url)
       showSuccessNotification('Successfully Created Player!')
-      navigate(playerUrl(response.game_id, response.id))
+      navigate(playerUrl(response.game_id, response.player_id))
     } catch (error) {
       console.error(error)
     }

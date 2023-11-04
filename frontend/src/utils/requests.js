@@ -7,7 +7,8 @@ import {
 import { alertError, showFailureNotification, showErrorNotification, playersAsArray, HTTPError } from './utils'
 
 const instance = axios.create({
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true
 })
 
 // Need to test returning response.json() vs response.data
@@ -230,17 +231,17 @@ export async function fetchGameScores (gameId, loadOldGame = false) {
     const response = await instance.get(apiEndPoint)
     response.data.forEach((pt) => {
       Object.keys(pt).forEach(key => {
-        if (key != "time") {
+        if (key !== 'time') {
           pt[key] = parseInt(pt[key], 10)
           if (isNaN(pt[key])) {
-            console.log("Got NaN")
             pt[key] = 0
           }
         }
       })
-      pt.time = (new Date(pt.time)).getTime()
+      console.log(Date.parse(pt.time))
+      pt.time = Date.parse(pt.time)
     })
-    console.log("game scores")
+    console.log("game scores, dfcve")
     console.log(response.data)
     return response.data
   } catch (error) {
